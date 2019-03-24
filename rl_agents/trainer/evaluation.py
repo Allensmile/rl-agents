@@ -62,7 +62,7 @@ class Evaluation(object):
                                  self.directory,
                                  add_subdirectory=(directory is None),
                                  video_callable=(None if self.display_env else False))
-        self.writer = SummaryWriter(self.monitor.directory)
+        self.writer = None  # SummaryWriter(self.monitor.directory)
         self.write_metadata()
 
         if recover:
@@ -178,10 +178,10 @@ class Evaluation(object):
 
     def after_all_episodes(self, episode, rewards):
         gamma = self.agent.config.get("gamma", 1)
-        self.writer.add_scalar('episode/length', len(rewards), episode)
-        self.writer.add_scalar('episode/total_reward', sum(rewards), episode)
-        self.writer.add_scalar('episode/return', sum(r*gamma**t for t, r in enumerate(rewards)), episode)
-        self.writer.add_histogram('episode/rewards', rewards, episode)
+        # self.writer.add_scalar('episode/length', len(rewards), episode)
+        # self.writer.add_scalar('episode/total_reward', sum(rewards), episode)
+        # self.writer.add_scalar('episode/return', sum(r*gamma**t for t, r in enumerate(rewards)), episode)
+        # self.writer.add_histogram('episode/rewards', rewards, episode)
         logger.info("Episode {} score: {}".format(episode, sum(rewards)))
 
     def after_some_episodes(self, episode):
@@ -218,6 +218,6 @@ class Evaluation(object):
         if self.training:
             self.save_agent_model(self.monitor.episode_id)
         self.monitor.close()
-        self.writer.close()
+        # self.writer.close()
         if self.close_env:
             self.env.close()
