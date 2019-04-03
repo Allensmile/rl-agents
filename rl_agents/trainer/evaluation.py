@@ -105,11 +105,24 @@ class Evaluation(object):
             self.seed(episode)
             self.reset()
             rewards = []
+            # Query agent for actions sequence
+            actions = self.agent.plan(self.observation)
+            if not actions:
+                raise Exception("The agent did not plan any action")
+
+            # Forward the actions to the environment viewer
+            try:
+                self.env.unwrapped.viewer.set_agent_action_sequence(actions)
+            except AttributeError:
+                pass
             while not terminal:
                 # Step until a terminal step is reached
-                reward, terminal = self.step()
+                reward, terminal = self.step(actions)
                 rewards.append(reward)
-
+                if actions:
+                    actions = actions[1:]
+                else: # replan
+                    actions = self.agent.plan(self.observation)
                 # Catch interruptions
                 try:
                     if self.env.unwrapped.done:
@@ -122,25 +135,16 @@ class Evaluation(object):
             self.after_all_episodes(episode, rewards)
             self.after_some_episodes(episode)
 
-    def step(self):
+    def step(self, actions):
         """
             Plan a sequence of actions according to the agent policy, and step the environment accordingly.
         """
-        # Query agent for actions sequence
-        actions = self.agent.plan(self.observation)
         if not actions:
-            raise Exception("The agent did not plan any action")
-
-        # Forward the actions to the environment viewer
-        try:
-            self.env.unwrapped.viewer.set_agent_action_sequence(actions)
-        except AttributeError:
-            pass
-
+            actions = [self.monitor.unwrapped.action_space.sample()]
         # Step the environment
         previous_observation, action = self.observation, actions[0]
         self.observation, reward, terminal, info = self.monitor.step(action)
-
+        # self.monitor.render()
         # Record the experience.
         if self.training:
             try:
